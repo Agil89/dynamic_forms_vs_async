@@ -56,58 +56,56 @@ class FormCreateView(CreateView):
                 #     email.save()
             else:
 
-                need_field = self.get_need_field(i)
-                main_form = self.get_main_form(form_id)
+                need_field = await self.get_need_field_(i)
+                main_form = await self.get_main_form_(form_id)
 
                 print(main_form)
                 print(need_field)
                 # main_form, need_field = self.get_fields(i, form_id) # bu nedi eeee :D
-                form = Values(forms=main_form,form_fields=need_field, value=request.POST[i],)
-                all_values[i]=str(request.POST[i])
-                form.save()
-        # functions = [
-        #     asyncio.ensure_future(self.send_email(form_id, all_values)),
-        # ]
-        # event_loop = asyncio.get_event_loop()
-        # event_loop.run_until_complete(asyncio.gather(*functions))
-        task1 = asyncio.create_task(self.send_email(form_id, all_values))
-        task2 = asyncio.create_task(self.send_email(form_id, all_values))
-        # await asyncio.wait([task1,task2])
-        # return render(request,'success.html')
-        await task1
-        await task2
-        await asyncio.sleep(0.1)
+                form = Values(forms=main_form, form_fields=need_field, value=request.POST[i],)
+                all_values[i] = str(request.POST[i])
+                await sync_to_async(form.save)()
+
+        task1 = asyncio.ensure_future(self.send_email(form_id, all_values))
+        task2 = asyncio.ensure_future(self.send_email(form_id, all_values))
+        await asyncio.gather(task1, task2)
         return HttpResponse("Non-blocking post call!")
-        # Thread(target=send_email,args=(form_id, all_values)).start()
-        # return render(request,'success.html')
-    #
+
+
     async def __call__(self, *args, **kwargs):
         pass
-    #
-    @sync_to_async
-    def get_main_form(self, form_id):
-        main_form = Forms.objects.filter(id=form_id).first()
-        return main_form
 
-    @sync_to_async
-    def get_need_field(self, label):
-        need_field = Fields.objects.filter(label=label).first()
-        return need_field
+    @staticmethod
+    def get_main_form(form_id):
+        return Forms.objects.filter(id=form_id).first()
 
+    @staticmethod
+    def get_need_field(label):
+        return Fields.objects.filter(label=label).first()
 
-    @sync_to_async
-    def send_email(self, form_id, all_values):
-        time.sleep(15)
+    async def get_main_form_(self, form_id):
+        return await sync_to_async(self.get_main_form)(form_id)
+
+    async def get_need_field_(self, label):
+        return await sync_to_async(self.get_need_field)(label)
+
+    @staticmethod
+    def get_user_email(form_id):
+        return SendList.objects.filter(forms_id=form_id).values_list('email', flat=True)
+
+    async def send_email(self, form_id, all_values):
+        print("inside send_email")
+        await asyncio.sleep(0.5)
         template_name = 'user_info.html'
         context = {
             'all_values': all_values
         }
         msg = render_to_string(template_name, context)
         subject = 'New users info'
-        user_emails = SendList.objects.filter(forms_id=form_id).values_list('email', flat=True)
-        message = EmailMessage(subject=subject, body=msg, from_email=settings.EMAIL_HOST_USER, to=user_emails)
+        user_emails = await sync_to_async(self.get_user_email)(form_id)
+        message = await sync_to_async(EmailMessage)(subject=subject, body=msg, from_email=settings.EMAIL_HOST_USER, to=user_emails)
         message.content_subtype = 'html'
-        message.send()
+        await sync_to_async(message.send)()
 
 
 
