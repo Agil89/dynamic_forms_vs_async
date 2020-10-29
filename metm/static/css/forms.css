@@ -1,0 +1,32 @@
+.label{
+    font-size: 12px;
+    color: #474747;
+}
+
+.little-star{
+    color: red;
+}
+body{
+    background-color: #6aa5c7;
+}
+.info-form{
+    background-color: #f3f3f3 !important;
+}
+.sub-button{
+    color: #fff;
+    border: 1px solid #18B4C2;
+    background: #18B4C2;
+    cursor: pointer;
+text-align: center;
+text-decoration: none;
+font: 16px 'Open Sans',"Lucida Grande","Lucida Sans Unicode",Arial,Arimo,Helvetica,sans-serif;
+    font-weight: normal;
+font-weight: 400;
+padding: 8px 28px;
+text-transform: uppercase;
+}
+.main-div{
+    background: #fff;
+    border: 1px solid #146356;
+    box-shadow: 0 0 3px #146356;
+}

@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+{% for key,value in all_values.items %}
+<p>
+    <span>{{key}}</span>---------- <span>{{value}}</span>
+</p>
+
+{% endfor %}
+{% endblock %}
