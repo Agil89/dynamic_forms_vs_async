@@ -14,20 +14,19 @@ from django.conf import settings
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.decorators import classonlymethod
 from threading import Thread
-
-
+# e bu zad deyishib axi :D
 
 class FormCreateView(CreateView):
     form_class = AllForms
     template_name = 'forms.html'
 
-    # @classonlymethod
-    # def as_view(cls, **initkwargs):
-    #     view = super().as_view(**initkwargs)
-    #     view._is_coroutine = asyncio.coroutines._is_coroutine
-    #     return view
+    @classonlymethod
+    def as_view(cls, **initkwargs):
+        view = super().as_view(**initkwargs)
+        view._is_coroutine = asyncio.coroutines._is_coroutine
+        return view
 
-    def post(self, request, *args, **kwargs):
+    async def post(self, request, *args, **kwargs):
         all_values = {}
         form_id=request.POST.get('formId')
         self.form_pk = form_id
@@ -59,6 +58,9 @@ class FormCreateView(CreateView):
 
                 need_field = self.get_need_field(i)
                 main_form = self.get_main_form(form_id)
+
+                print(main_form)
+                print(need_field)
                 # main_form, need_field = self.get_fields(i, form_id) # bu nedi eeee :D
                 form = Values(forms=main_form,form_fields=need_field, value=request.POST[i],)
                 all_values[i]=str(request.POST[i])
@@ -68,48 +70,44 @@ class FormCreateView(CreateView):
         # ]
         # event_loop = asyncio.get_event_loop()
         # event_loop.run_until_complete(asyncio.gather(*functions))
-        # task1 = asyncio.create_task(self.send_email(form_id, all_values))
-        # task2 = asyncio.create_task(self.send_email(form_id, all_values))
+        task1 = asyncio.create_task(self.send_email(form_id, all_values))
+        task2 = asyncio.create_task(self.send_email(form_id, all_values))
         # await asyncio.wait([task1,task2])
         # return render(request,'success.html')
-        # await task1
-        # await task2
-        # await asyncio.sleep(0.1)
-        # return HttpResponse("Non-blocking post call!")
-        Thread(target=send_email,args=(form_id, all_values)).start()
-        return render(request,'success.html')
+        await task1
+        await task2
+        await asyncio.sleep(0.1)
+        return HttpResponse("Non-blocking post call!")
+        # Thread(target=send_email,args=(form_id, all_values)).start()
+        # return render(request,'success.html')
     #
-    # async def __call__(self, *args, **kwargs):
-    #     # hes zad)))
-    #     # pass
-    #     # await self.post()
-    #     # return self.post
-    #     pass
+    async def __call__(self, *args, **kwargs):
+        pass
     #
-    # @sync_to_async
+    @sync_to_async
     def get_main_form(self, form_id):
         main_form = Forms.objects.filter(id=form_id).first()
         return main_form
 
-    # @sync_to_async
+    @sync_to_async
     def get_need_field(self, label):
         need_field = Fields.objects.filter(label=label).first()
         return need_field
 
 
-    # @sync_to_async
-def send_email(form_id, all_values):
-    time.sleep(15)
-    template_name = 'user_info.html'
-    context = {
-        'all_values': all_values
-    }
-    msg = render_to_string(template_name, context)
-    subject = 'New users info'
-    user_emails = SendList.objects.filter(forms_id=form_id).values_list('email', flat=True)
-    message = EmailMessage(subject=subject, body=msg, from_email=settings.EMAIL_HOST_USER, to=user_emails)
-    message.content_subtype = 'html'
-    message.send()
+    @sync_to_async
+    def send_email(self, form_id, all_values):
+        time.sleep(15)
+        template_name = 'user_info.html'
+        context = {
+            'all_values': all_values
+        }
+        msg = render_to_string(template_name, context)
+        subject = 'New users info'
+        user_emails = SendList.objects.filter(forms_id=form_id).values_list('email', flat=True)
+        message = EmailMessage(subject=subject, body=msg, from_email=settings.EMAIL_HOST_USER, to=user_emails)
+        message.content_subtype = 'html'
+        message.send()
 
 
 
